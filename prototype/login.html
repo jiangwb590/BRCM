@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - BCRM美容院客户管理系统</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* 登录页动画 */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .floating {
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .decorative-circle {
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary-200), var(--primary-300));
+      opacity: 0.3;
+    }
+    
+    .circle-1 {
+      width: 300px;
+      height: 300px;
+      top: -100px;
+      left: -100px;
+    }
+    
+    .circle-2 {
+      width: 200px;
+      height: 200px;
+      bottom: 50px;
+      left: 20%;
+    }
+    
+    .circle-3 {
+      width: 150px;
+      height: 150px;
+      top: 30%;
+      right: 10%;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <!-- 装饰元素 -->
+    <div class="decorative-circle circle-1 floating"></div>
+    <div class="decorative-circle circle-2 floating" style="animation-delay: -2s;"></div>
+    <div class="decorative-circle circle-3 floating" style="animation-delay: -4s;"></div>
+    
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+          </svg>
+        </div>
+        <div class="login-logo-text">BCRM</div>
+        <div class="login-logo-sub">美容院客户关系管理系统</div>
+      </div>
+      
+      <h2 class="login-title">欢迎回来</h2>
+      
+      <form class="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">账号</label>
+          <input type="text" class="form-input" placeholder="请输入账号" value="admin">
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">密码</label>
+          <input type="password" class="form-input" placeholder="请输入密码" value="123456">
+        </div>
+        
+        <div class="form-group">
+          <div class="flex justify-between items-center">
+            <label class="form-check">
+              <input type="checkbox" class="form-check-input" checked>
+              <span class="form-check-label">记住我</span>
+            </label>
+            <a href="#" class="text-sm text-primary">忘记密码？</a>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-lg">
+          登录系统
+        </button>
+      </form>
+      
+      <div class="login-footer">
+        © 2026 BCRM 美容院客户管理系统
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

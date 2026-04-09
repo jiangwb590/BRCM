@@ -1,0 +1,30 @@
+[Unit]
+Description=BCRM Beauty CRM Application
+After=network.target mysqld.service
+Wants=mysqld.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/bcrm/backend
+ExecStart=/usr/bin/java -Xms512m -Xmx1024m -XX:+UseG1GC -jar /opt/bcrm/backend/bcrm.jar --spring.profiles.active=prod
+ExecStop=/bin/kill -15 $MAINPID
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/bcrm/bcrm.log
+StandardError=append:/var/log/bcrm/bcrm.log
+
+# 环境变量
+Environment="DB_HOST=localhost"
+Environment="DB_PORT=3306"
+Environment="DB_NAME=bcrm"
+Environment="DB_USER=bcrm"
+Environment="DB_PASS=BCRM@2024#App"
+Environment="JWT_SECRET=BCRM-JWT-SECRET-KEY-2024-PRODUCTION-ENVIRONMENT"
+
+# 安全限制
+LimitNOFILE=65535
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

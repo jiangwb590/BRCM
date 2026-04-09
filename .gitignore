@@ -1,0 +1,44 @@
+# 编译输出
+target/
+dist/
+build/
+*.class
+*.jar
+*.war
+*.ear
+
+# 依赖目录
+node_modules/
+
+# IDE文件
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# 日志文件
+*.log
+logs/
+error_log/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 环境配置（包含敏感信息）
+application-prod.yml
+.env
+.env.local
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+
+# 测试覆盖率
+coverage/
+
+# 打包文件
+*.zip
+*.tar.gz
