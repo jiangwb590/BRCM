@@ -10,6 +10,24 @@
       <div class="stat-card warning"><div class="stat-value">{{ stats.warning }}</div><div class="stat-label">库存预警</div></div>
     </div>
     
+    <div class="filter-section">
+      <el-form :model="queryParams" inline>
+        <el-form-item label="分类">
+          <el-select v-model="queryParams.categoryName" placeholder="全部" clearable style="width: 150px">
+            <el-option v-for="c in categoryOptions" :key="c.id" :label="c.dictLabel" :value="c.dictLabel" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="产品名称">
+          <el-input v-model="queryParams.name" placeholder="请输入产品名称" clearable style="width: 180px" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">搜索</el-button>
+          <el-button @click="handleReset">重置</el-button>
+          <el-button type="success" @click="handleExport">导出</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+    
     <div class="table-section">
       <el-table :data="tableData" v-loading="loading">
         <el-table-column prop="name" label="产品名称" min-width="150" />
@@ -24,14 +42,19 @@
         <el-table-column prop="salePrice" label="售价" width="100">
           <template #default="{ row }">¥{{ row.salePrice }}</template>
         </el-table-column>
-        <el-table-column label="操作" fixed="right" width="200">
+        <el-table-column label="操作" fixed="right" width="240">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleStockIn(row)" v-permission="'stock:in'">入库</el-button>
             <el-button type="primary" link @click="handleStockOut(row)" v-permission="'stock:out'">出库</el-button>
             <el-button type="primary" link @click="openEditDialog(row)" v-permission="'product:edit'">编辑</el-button>
+            <el-button type="danger" link @click="handleDelete(row)" v-permission="'product:delete'">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
+      
+      <div class="pagination">
+        <el-pagination v-model:current-page="queryParams.pageNum" v-model:page-size="queryParams.pageSize" :total="total" layout="total, sizes, prev, pager, next" @size-change="fetchData" @current-change="fetchData" />
+      </div>
     </div>
     
     <!-- 新增/编辑对话框 -->
@@ -57,9 +80,7 @@
         <el-form-item label="售价" prop="salePrice">
           <el-input-number v-model="formData.salePrice" :min="0" :precision="2" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="库存" prop="stock">
-          <el-input-number v-model="formData.stock" :min="0" style="width: 100%" />
-        </el-form-item>
+        <!-- 库存通过入库功能添加，新增产品时默认为0 -->
         <el-form-item label="预警值" prop="stockWarning">
           <el-input-number v-model="formData.stockWarning" :min="0" style="width: 100%" />
         </el-form-item>
@@ -107,7 +128,16 @@
             <el-option label="服务消耗" :value="1" />
             <el-option label="报废" :value="2" />
             <el-option label="其他" :value="3" />
+            <el-option label="客户消费" :value="4" />
           </el-select>
+        </el-form-item>
+        <el-form-item v-if="stockOutData.stockOutType === 4" label="客户">
+          <el-select v-model="stockOutData.customerId" filterable placeholder="请选择客户" style="width: 100%">
+            <el-option v-for="c in customerOptions" :key="c.id" :label="c.name + (c.phone ? ' (' + c.phone + ')' : '')" :value="c.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="stockOutData.remark" type="textarea" :rows="2" placeholder="请输入备注信息" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -120,9 +150,10 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getProductPage, addProduct, updateProduct, addStockIn, addStockOut } from '@/api/product'
+import { getProductPage, addProduct, updateProduct, deleteProduct, addStockIn, addStockOut, getStockWarningProducts, exportProducts } from '@/api/product'
 import { getDictByCode } from '@/api/system'
-import { ElMessage } from 'element-plus'
+import { getCustomerAll } from '@/api/customer'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -152,22 +183,64 @@ const formData = reactive({
 
 const formRules = {
   name: [{ required: true, message: '请输入产品名称', trigger: 'blur' }],
+  categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
   salePrice: [{ required: true, message: '请输入售价', trigger: 'blur' }]
 }
 
 const currentProduct = ref({})
 const stockInData = reactive({ quantity: 1, unitPrice: 0, supplier: '' })
-const stockOutData = reactive({ quantity: 1, stockOutType: 1 })
+const stockOutData = reactive({ quantity: 1, stockOutType: 1, remark: '', customerId: null })
+const customerOptions = ref([])
+const total = ref(0)
+const queryParams = reactive({ pageNum: 1, pageSize: 10, categoryName: '', name: '' })
 
 async function fetchData() {
   loading.value = true
   try {
-    const res = await getProductPage({})
+    const res = await getProductPage(queryParams)
     tableData.value = res.data?.records || []
-    stats.total = tableData.value.length
-    stats.warning = tableData.value.filter(p => p.stock <= p.stockWarning).length
+    total.value = res.data?.total || 0
+    stats.total = total.value
   } finally {
     loading.value = false
+  }
+}
+
+async function fetchStockWarning() {
+  try {
+    const res = await getStockWarningProducts()
+    stats.warning = res.data?.length || 0
+  } catch (e) {
+    console.error('获取库存预警失败', e)
+  }
+}
+
+function handleSearch() {
+  queryParams.pageNum = 1
+  fetchData()
+}
+
+function handleReset() {
+  queryParams.categoryName = ''
+  queryParams.name = ''
+  queryParams.pageNum = 1
+  fetchData()
+}
+
+async function handleExport() {
+  try {
+    const res = await exportProducts()
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '产品列表.xlsx'
+    a.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (e) {
+    ElMessage.error('导出失败')
+    console.error(e)
   }
 }
 
@@ -216,6 +289,21 @@ async function handleSubmit() {
   }
 }
 
+async function handleDelete(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除产品 "${row.name}" 吗？`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+    await deleteProduct(row.id)
+    ElMessage.success('删除成功')
+    fetchData()
+  } catch (e) {
+    if (e !== 'cancel') console.error(e)
+  }
+}
+
 function handleStockIn(row) {
   currentProduct.value = row
   stockInData.quantity = 1
@@ -249,7 +337,10 @@ function handleStockOut(row) {
   currentProduct.value = row
   stockOutData.quantity = 1
   stockOutData.stockOutType = 1
+  stockOutData.remark = ''
+  stockOutData.customerId = null
   stockOutVisible.value = true
+  getCustomerAll().then(res => customerOptions.value = res.data || [])
 }
 
 async function submitStockOut() {
@@ -262,7 +353,10 @@ async function submitStockOut() {
       quantity: stockOutData.quantity,
       unitPrice: currentProduct.value.salePrice,
       totalPrice: stockOutData.quantity * currentProduct.value.salePrice,
-      stockOutType: stockOutData.stockOutType
+      stockOutType: stockOutData.stockOutType,
+      remark: stockOutData.remark,
+      customerId: stockOutData.stockOutType === 4 ? stockOutData.customerId : null,
+      customerName: stockOutData.stockOutType === 4 ? (customerOptions.value.find(c => c.id === stockOutData.customerId)?.name || '') : null
     })
     ElMessage.success('出库成功')
     stockOutVisible.value = false
@@ -275,6 +369,7 @@ async function submitStockOut() {
 onMounted(() => {
   fetchData()
   fetchCategories()
+  fetchStockWarning()
 })
 </script>
 
@@ -288,7 +383,9 @@ onMounted(() => {
       &.warning .stat-value { color: #ff9900; }
     }
   }
+  .filter-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
   .table-section { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+  .pagination { margin-top: 16px; display: flex; justify-content: flex-end; }
   .low-stock { color: #ff4d4f; font-weight: 600; }
 }
 </style>

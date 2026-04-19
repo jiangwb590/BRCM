@@ -240,7 +240,7 @@ public class ServicePackageServiceImpl extends ServiceImpl<ServicePackageMapper,
 
     @Override
     public Page<PackagePurchase> pagePurchases(PageRequest pageRequest, Long customerId) {
-        Page<PackagePurchase> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<PackagePurchase> page = pageRequest.toPage();
         LambdaQueryWrapper<PackagePurchase> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(customerId != null, PackagePurchase::getCustomerId, customerId);
         wrapper.orderByDesc(PackagePurchase::getCreateTime);

@@ -30,12 +30,12 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
-    const res = response.data
-    
-    // 如果是文件下载，直接返回
+    // 如果是文件下载，直接返回data
     if (response.config.responseType === 'blob') {
-      return response
+      return response.data
     }
+    
+    const res = response.data
     
     // 统一处理业务状态码
     if (res.code === 200 || res.code === 0) {

@@ -13,6 +13,7 @@
         <el-form-item>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="handleReset">重置</el-button>
+          <el-button type="success" @click="handleExport">导出</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -33,6 +34,12 @@
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">{{ row.status === 1 ? '正常' : '已作废' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button v-if="row.status === 1" type="danger" link @click="handleCancel(row)"><el-icon><Delete /></el-icon>作废</el-button>
+            <span v-else style="color: #999;">-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -80,8 +87,8 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { getStockInPage, addStockIn, getAllProducts } from '@/api/product'
-import { ElMessage } from 'element-plus'
+import { getStockInPage, addStockIn, cancelStockIn, getAllProducts, exportStockIn } from '@/api/product'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -120,9 +127,42 @@ async function fetchData() {
 function handleSearch() { queryParams.pageNum = 1; fetchData() }
 function handleReset() { queryParams.productName = ''; handleSearch() }
 
+async function handleExport() {
+  try {
+    const res = await exportStockIn()
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '入库记录.xlsx'
+    a.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (e) {
+    ElMessage.error('导出失败')
+    console.error(e)
+  }
+}
+
 function openAddDialog() {
   Object.assign(formData, { productId: null, quantity: 1, unitPrice: 0, stockInType: 1, supplier: '', remark: '' })
   dialogVisible.value = true
+}
+
+async function handleCancel(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要作废入库单 "${row.stockInNo}" 吗？作废后将回滚库存。`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+    await cancelStockIn(row.id)
+    ElMessage.success('作废成功')
+    fetchData()
+    getAllProducts().then(res => productOptions.value = res.data || [])
+  } catch (e) {
+    if (e !== 'cancel') console.error(e)
+  }
 }
 
 async function handleSubmit() {

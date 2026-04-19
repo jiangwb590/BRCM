@@ -30,7 +30,8 @@ public class ServiceProjectServiceImpl extends ServiceImpl<ServiceProjectMapper,
 
     @Override
     public Page<ServiceProject> pageProjects(PageRequest pageRequest, ServiceProject query) {
-        Page<ServiceProject> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        log.info("分页参数: current={}, size={}", pageRequest.getCurrent(), pageRequest.getSize());
+        Page<ServiceProject> page = pageRequest.toPage();
         
         LambdaQueryWrapper<ServiceProject> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(query.getName()), ServiceProject::getName, query.getName());

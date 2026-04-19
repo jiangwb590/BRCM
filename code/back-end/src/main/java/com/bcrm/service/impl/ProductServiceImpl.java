@@ -29,11 +29,12 @@ public class ProductServiceImpl extends ServiceImpl<ProductMapper, Product> impl
 
     @Override
     public Page<Product> pageProducts(PageRequest pageRequest, Product query) {
-        Page<Product> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<Product> page = pageRequest.toPage();
         
         LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(query.getName()), Product::getName, query.getName());
         wrapper.eq(query.getCategoryId() != null, Product::getCategoryId, query.getCategoryId());
+        wrapper.eq(StringUtils.hasText(query.getCategoryName()), Product::getCategoryName, query.getCategoryName());
         wrapper.eq(query.getStatus() != null, Product::getStatus, query.getStatus());
         wrapper.orderByDesc(Product::getCreateTime);
         

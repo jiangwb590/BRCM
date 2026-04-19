@@ -41,13 +41,14 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
 
     @Override
     public Page<MemberCard> pageCards(PageRequest pageRequest, MemberCard query) {
-        Page<MemberCard> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<MemberCard> page = pageRequest.toPage();
         
         LambdaQueryWrapper<MemberCard> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(query.getCustomerName()), MemberCard::getCustomerName, query.getCustomerName());
         wrapper.eq(query.getCustomerId() != null, MemberCard::getCustomerId, query.getCustomerId());
         wrapper.eq(StringUtils.hasText(query.getCardType()), MemberCard::getCardType, query.getCardType());
         wrapper.eq(query.getStatus() != null, MemberCard::getStatus, query.getStatus());
+        wrapper.eq(query.getStatus() == null, MemberCard::getStatus, 1);
         wrapper.orderByDesc(MemberCard::getCreateTime);
         
         return this.page(page, wrapper);
@@ -133,7 +134,7 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
         if (card == null) {
             throw new BusinessException("会员卡不存在");
         }
-        
+
         MemberCard updateCard = new MemberCard();
         updateCard.setId(cardId);
         updateCard.setStatus(0);

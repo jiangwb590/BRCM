@@ -48,7 +48,7 @@ public class AppointmentServiceImpl extends ServiceImpl<AppointmentMapper, Appoi
 
     @Override
     public Page<Appointment> pageAppointments(PageRequest pageRequest, Appointment query) {
-        Page<Appointment> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<Appointment> page = pageRequest.toPage();
         
         LambdaQueryWrapper<Appointment> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(query.getCustomerName()), Appointment::getCustomerName, query.getCustomerName());

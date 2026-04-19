@@ -13,6 +13,7 @@
         <el-form-item>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="handleReset">重置</el-button>
+          <el-button type="success" @click="handleExport">导出</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -30,10 +31,22 @@
             <el-tag :type="getStockOutType(row.stockOutType)" size="small">{{ getStockOutTypeName(row.stockOutType) }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="customerName" label="客户" width="100">
+          <template #default="{ row }">
+            {{ row.stockOutType === 4 ? (row.customerName || '-') : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="stockOutTime" label="出库时间" width="180" />
+        <el-table-column prop="remark" label="备注" min-width="150" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">{{ row.status === 1 ? '正常' : '已作废' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="100" fixed="right">
+          <template #default="{ row }">
+            <el-button v-if="row.status === 1" type="danger" link @click="handleCancel(row)"><el-icon><Delete /></el-icon>作废</el-button>
+            <span v-else style="color: #999;">-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -63,6 +76,12 @@
             <el-option label="服务消耗" :value="1" />
             <el-option label="报废" :value="2" />
             <el-option label="其他" :value="3" />
+            <el-option label="客户消费" :value="4" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="formData.stockOutType === 4" label="客户姓名">
+          <el-select v-model="formData.customerId" filterable placeholder="选择客户" style="width: 100%">
+            <el-option v-for="c in customerOptions" :key="c.id" :label="c.name + (c.phone ? ' (' + c.phone + ')' : '')" :value="c.id" />
           </el-select>
         </el-form-item>
         <el-form-item label="备注">
@@ -79,8 +98,9 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { getStockOutPage, addStockOut, getAllProducts } from '@/api/product'
-import { ElMessage } from 'element-plus'
+import { getStockOutPage, addStockOut, cancelStockOut, getAllProducts, exportStockOut } from '@/api/product'
+import { getCustomerAll } from '@/api/customer'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -90,12 +110,14 @@ const tableData = ref([])
 const total = ref(0)
 const queryParams = reactive({ pageNum: 1, pageSize: 10, productName: '' })
 const productOptions = ref([])
+const customerOptions = ref([])
 
 const formData = reactive({
   productId: null,
   quantity: 1,
   stockOutType: 1,
-  remark: ''
+  remark: '',
+  customerId: null
 })
 
 const formRules = {
@@ -114,7 +136,7 @@ function getStockOutType(type) {
 }
 
 function getStockOutTypeName(type) {
-  const names = { 1: '服务消耗', 2: '报废', 3: '其他' }
+  const names = { 1: '服务消耗', 2: '报废', 3: '其他', 4: '客户消费' }
   return names[type] || '-'
 }
 
@@ -132,8 +154,25 @@ async function fetchData() {
 function handleSearch() { queryParams.pageNum = 1; fetchData() }
 function handleReset() { queryParams.productName = ''; handleSearch() }
 
+async function handleExport() {
+  try {
+    const res = await exportStockOut()
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '出库记录.xlsx'
+    a.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
+  } catch (e) {
+    ElMessage.error('导出失败')
+    console.error(e)
+  }
+}
+
 function openAddDialog() {
-  Object.assign(formData, { productId: null, quantity: 1, stockOutType: 1, remark: '' })
+  Object.assign(formData, { productId: null, quantity: 1, stockOutType: 1, remark: '', customerId: null })
   dialogVisible.value = true
 }
 
@@ -141,6 +180,22 @@ function handleProductChange(productId) {
   const product = productOptions.value.find(p => p.id === productId)
   if (product && formData.quantity > product.stock) {
     formData.quantity = product.stock
+  }
+}
+
+async function handleCancel(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要作废出库单 "${row.stockOutNo}" 吗？作废后将回滚库存。`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+    )
+    await cancelStockOut(row.id)
+    ElMessage.success('作废成功')
+    fetchData()
+    getAllProducts().then(res => productOptions.value = res.data || [])
+  } catch (e) {
+    if (e !== 'cancel') console.error(e)
   }
 }
 
@@ -157,6 +212,7 @@ async function handleSubmit() {
     submitLoading.value = true
     
     const product = productOptions.value.find(p => p.id === formData.productId)
+    const customer = formData.stockOutType === 4 ? customerOptions.value.find(c => c.id === formData.customerId) : null
     await addStockOut({
       productId: formData.productId,
       productName: product?.name || '',
@@ -165,6 +221,8 @@ async function handleSubmit() {
       unitPrice: product?.salePrice || 0,
       totalPrice: formData.quantity * (product?.salePrice || 0),
       stockOutType: formData.stockOutType,
+      customerId: customer?.id || null,
+      customerName: customer?.name || '',
       remark: formData.remark
     })
     
@@ -179,6 +237,7 @@ async function handleSubmit() {
 onMounted(() => {
   fetchData()
   getAllProducts().then(res => productOptions.value = res.data || [])
+  getCustomerAll().then(res => customerOptions.value = res.data || [])
 })
 </script>
 

@@ -38,7 +38,7 @@ public class CustomerCareServiceImpl extends ServiceImpl<CustomerCareMapper, Cus
 
     @Override
     public Page<CustomerCare> pageCares(PageRequest pageRequest, CustomerCare query) {
-        Page<CustomerCare> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<CustomerCare> page = pageRequest.toPage();
         
         LambdaQueryWrapper<CustomerCare> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(query.getCustomerName()), CustomerCare::getCustomerName, query.getCustomerName());

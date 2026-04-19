@@ -73,7 +73,16 @@ public interface SmsService {
      * 发送新客户回访短信
      * @param phoneNumber 手机号
      * @param customerName 客户姓名
+     * @param gender 性别：1-男 2-女
      * @return 是否发送成功
      */
-    boolean sendNewCustomerFollowUpSms(String phoneNumber, String customerName);
+    boolean sendNewCustomerFollowUpSms(String phoneNumber, String customerName, Integer gender);
+    
+    /**
+     * 发送会员消费满3次提醒短信
+     * @param phoneNumber 手机号
+     * @param customerName 客户姓名
+     * @return 是否发送成功
+     */
+    boolean sendMemberConsumeRewardSms(String phoneNumber, String customerName);
 }

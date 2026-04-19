@@ -77,6 +77,8 @@ public class OperLogAspect {
                 return;
             }
 
+            log.debug("开始记录操作日志: {}", operLogAnnotation.title());
+
             // 获取请求信息
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 
@@ -129,11 +131,12 @@ public class OperLogAspect {
 
             // 保存日志
             operLogService.save(operLog);
+            log.debug("操作日志保存成功: {} - {}", operLog.getTitle(), operLog.getTargetName());
             
             // 清理上下文
             OperLogContextHolder.clear();
         } catch (Exception ex) {
-            log.error("记录操作日志异常", ex);
+            log.error("记录操作日志异常: {}", ex.getMessage(), ex);
             OperLogContextHolder.clear();
         }
     }

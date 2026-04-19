@@ -61,9 +61,19 @@ public class StockOutRecord implements Serializable {
     private BigDecimal totalPrice;
 
     /**
-     * 出库类型：1-服务消耗 2-报废 3-其他
+     * 出库类型：1-服务消耗 2-报废 3-其他 4-客户消费
      */
     private Integer stockOutType;
+
+    /**
+     * 客户ID（出库类型为客户消费时关联）
+     */
+    private Long customerId;
+
+    /**
+     * 客户名称（出库类型为客户消费时记录）
+     */
+    private String customerName;
 
     /**
      * 关联ID（如消费记录ID）

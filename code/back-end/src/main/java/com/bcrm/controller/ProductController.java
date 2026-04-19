@@ -8,9 +8,14 @@ import com.bcrm.entity.Product;
 import com.bcrm.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -115,5 +120,65 @@ public class ProductController {
     public Result<Void> stockOut(@PathVariable Long id, @RequestParam Integer quantity) {
         productService.stockOut(id, quantity);
         return Result.success();
+    }
+
+    /**
+     * 导出产品列表到Excel
+     */
+    @Operation(summary = "导出产品列表")
+    @GetMapping("/export")
+    public void export(Product query, HttpServletResponse response) throws Exception {
+        List<Product> list = productService.list();
+        
+        // 创建工作簿
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("产品列表");
+            
+            // 创建标题样式
+            CellStyle headerStyle = workbook.createCellStyle();
+            headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            headerStyle.setAlignment(HorizontalAlignment.CENTER);
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            headerStyle.setFont(headerFont);
+            
+            // 创建表头
+            String[] headers = {"产品编号", "产品名称", "分类", "规格", "单位", "售价", "库存", "预警值", "状态"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+            
+            // 填充数据
+            int rowNum = 1;
+            for (Product product : list) {
+                Row row = sheet.createRow(rowNum++);
+                row.createCell(0).setCellValue(product.getProductCode() != null ? product.getProductCode() : "");
+                row.createCell(1).setCellValue(product.getName() != null ? product.getName() : "");
+                row.createCell(2).setCellValue(product.getCategoryName() != null ? product.getCategoryName() : "");
+                row.createCell(3).setCellValue(product.getSpecification() != null ? product.getSpecification() : "");
+                row.createCell(4).setCellValue(product.getUnit() != null ? product.getUnit() : "");
+                row.createCell(5).setCellValue(product.getSalePrice() != null ? product.getSalePrice().doubleValue() : 0);
+                row.createCell(6).setCellValue(product.getStock() != null ? product.getStock() : 0);
+                row.createCell(7).setCellValue(product.getStockWarning() != null ? product.getStockWarning() : 0);
+                row.createCell(8).setCellValue(product.getStatus() != null && product.getStatus() == 1 ? "启用" : "禁用");
+            }
+            
+            // 自动调整列宽
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+            
+            // 设置响应头
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            String fileName = URLEncoder.encode("产品列表.xlsx", StandardCharsets.UTF_8);
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+            
+            // 写入响应
+            workbook.write(response.getOutputStream());
+        }
     }
 }

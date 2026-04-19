@@ -37,7 +37,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     @Override
     public Page<SysUser> pageUsers(PageRequest pageRequest, SysUser query) {
-        Page<SysUser> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<SysUser> page = pageRequest.toPage();
         return baseMapper.selectUserPage(page, query.getUsername(), query.getRealName(), query.getPhone(), query.getStatus());
     }
 

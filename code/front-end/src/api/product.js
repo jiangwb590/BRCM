@@ -87,6 +87,14 @@ export function addStockIn(data) {
   })
 }
 
+// 作废入库记录
+export function cancelStockIn(id) {
+  return request({
+    url: `/stock-in/cancel/${id}`,
+    method: 'post'
+  })
+}
+
 // 获取出库记录
 export function getStockOutPage(params) {
   return request({
@@ -102,5 +110,48 @@ export function addStockOut(data) {
     url: '/stock-out',
     method: 'post',
     data
+  })
+}
+
+// 作废出库记录
+export function cancelStockOut(id) {
+  return request({
+    url: `/stock-out/cancel/${id}`,
+    method: 'post'
+  })
+}
+
+// 获取库存预警产品
+export function getStockWarningProducts() {
+  return request({
+    url: '/product/stock-warning',
+    method: 'get'
+  })
+}
+
+// 导出产品列表
+export function exportProducts() {
+  return request({
+    url: '/product/export',
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+// 导出入库记录
+export function exportStockIn() {
+  return request({
+    url: '/stock-in/export',
+    method: 'get',
+    responseType: 'blob'
+  })
+}
+
+// 导出出库记录
+export function exportStockOut() {
+  return request({
+    url: '/stock-out/export',
+    method: 'get',
+    responseType: 'blob'
   })
 }

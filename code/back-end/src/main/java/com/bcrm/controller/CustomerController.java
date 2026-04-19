@@ -49,6 +49,16 @@ public class CustomerController {
     }
 
     /**
+     * 获取所有客户列表（用于下拉选择）
+     */
+    @Operation(summary = "获取所有客户列表")
+    @GetMapping("/all")
+    public Result<List<Customer>> getAll() {
+        List<Customer> list = customerService.list();
+        return Result.success(list);
+    }
+
+    /**
      * 根据ID查询客户
      */
     @Operation(summary = "根据ID查询客户")

@@ -1,6 +1,6 @@
 package com.bcrm.common;
 
-import lombok.Data;
+import lombok.Getter;
 
 import java.io.Serializable;
 
@@ -10,7 +10,7 @@ import java.io.Serializable;
  * @author BCRM
  * @since 2026-03-14
  */
-@Data
+@Getter
 public class PageRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -35,18 +35,44 @@ public class PageRequest implements Serializable {
      */
     private Boolean isAsc = false;
 
-    /**
-     * 获取当前页码（兼容方法）
-     */
-    public Integer getPageNum() {
-        return this.current;
+    // === Setter 方法，兼容前端多种参数名 ===
+
+    public void setCurrent(Integer current) {
+        if (current != null) {
+            this.current = current;
+        }
+    }
+
+    public void setSize(Integer size) {
+        if (size != null) {
+            this.size = size;
+        }
     }
 
     /**
-     * 获取每页条数（兼容方法）
+     * 兼容前端 pageNum 参数
      */
-    public Integer getPageSize() {
-        return this.size;
+    public void setPageNum(Integer pageNum) {
+        if (pageNum != null) {
+            this.current = pageNum;
+        }
+    }
+
+    /**
+     * 兼容前端 pageSize 参数
+     */
+    public void setPageSize(Integer pageSize) {
+        if (pageSize != null) {
+            this.size = pageSize;
+        }
+    }
+
+    public void setOrderBy(String orderBy) {
+        this.orderBy = orderBy;
+    }
+
+    public void setIsAsc(Boolean isAsc) {
+        this.isAsc = isAsc;
     }
 
     /**

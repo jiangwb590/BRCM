@@ -36,6 +36,8 @@ public class StockInRecordServiceImpl extends ServiceImpl<StockInRecordMapper, S
     @Override
     public Page<StockInRecord> pageRecords(PageRequest pageRequest, StockInRecord query) {
         LambdaQueryWrapper<StockInRecord> wrapper = new LambdaQueryWrapper<>();
+        // 只查询正常记录，不显示已作废的
+        wrapper.eq(StockInRecord::getStatus, 1);
         if (StringUtils.hasText(query.getProductName())) {
             wrapper.like(StockInRecord::getProductName, query.getProductName());
         }

@@ -3,6 +3,7 @@ package com.bcrm.task;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.bcrm.entity.*;
 import com.bcrm.mapper.*;
+import com.bcrm.service.MemberConsumeReminderService;
 import com.bcrm.service.SmsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class SystemScheduledTask {
     private final MessageMapper messageMapper;
     private final CustomerCareMapper customerCareMapper;
     private final SmsService smsService;
+    private final MemberConsumeReminderService memberConsumeReminderService;
 
     /**
      * 预约提醒 - 每小时执行一次
@@ -467,7 +469,8 @@ public class SystemScheduledTask {
                 try {
                     boolean smsSuccess = smsService.sendNewCustomerFollowUpSms(
                             customer.getPhone(), 
-                            customer.getName()
+                            customer.getName(),
+                            customer.getGender()
                     );
                     
                     if (smsSuccess) {
@@ -508,5 +511,15 @@ public class SystemScheduledTask {
             }
         }
         log.info("新客户回访短信任务完成，共发送 {} 条短信", sentCount);
+    }
+    
+    /**
+     * 会员消费满3次提醒 - 每天上午11点执行
+     * 扫描当月消费满3次的会员客户，发送提醒短信
+     */
+    @Scheduled(cron = "0 0 11 * * ?")
+    public void memberConsumeRewardReminder() {
+        log.info("执行会员消费满3次提醒定时任务...");
+        memberConsumeReminderService.sendMemberConsumeReminder();
     }
 }

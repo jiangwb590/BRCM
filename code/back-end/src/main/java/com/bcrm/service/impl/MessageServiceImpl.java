@@ -30,7 +30,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
 
     @Override
     public Page<Message> pageMessages(PageRequest pageRequest, Message query) {
-        Page<Message> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<Message> page = pageRequest.toPage();
         
         LambdaQueryWrapper<Message> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(query.getTitle()), Message::getTitle, query.getTitle());

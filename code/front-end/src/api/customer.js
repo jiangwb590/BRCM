@@ -9,6 +9,14 @@ export function getCustomerPage(params) {
   })
 }
 
+// 获取所有客户列表
+export function getCustomerAll() {
+  return request({
+    url: '/customer/all',
+    method: 'get'
+  })
+}
+
 // 获取客户详情
 export function getCustomerById(id) {
   return request({

@@ -32,7 +32,7 @@ public class SysDictServiceImpl extends ServiceImpl<SysDictMapper, SysDict> impl
             wrapper.like(SysDict::getDictCode, query.getDictCode());
         }
         wrapper.orderByDesc(SysDict::getCreateTime);
-        return this.page(new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize()), wrapper);
+        return this.page(pageRequest.toPage(), wrapper);
     }
 
     @Override

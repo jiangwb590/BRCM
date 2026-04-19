@@ -159,8 +159,22 @@ public class SmsServiceImpl implements SmsService {
      * 发送新客户回访短信（登记满7天）
      */
     @Override
-    public boolean sendNewCustomerFollowUpSms(String phoneNumber, String customerName) {
-        String content = String.format("亲爱的%s，感谢您成为我们的新朋友！希望我们的服务让您感到满意。如有任何问题或建议，欢迎随时联系我们，期待为您带来更多美丽体验！回T退订", 
+    public boolean sendNewCustomerFollowUpSms(String phoneNumber, String customerName, Integer gender) {
+        String title = "亲爱的" + customerName;
+        if (gender != null) {
+            title += (gender == 2 ? "女士" : "先生");
+        }
+        String content = String.format("%s，感谢您成为我们的新朋友！希望我们的服务让您感到满意。如有任何问题或建议，欢迎随时联系我们，期待为您带来更多美丽体验！",
+                title);
+        return sendSms(phoneNumber, content);
+    }
+    
+    /**
+     * 发送会员消费满3次提醒短信
+     */
+    @Override
+    public boolean sendMemberConsumeRewardSms(String phoneNumber, String customerName) {
+        String content = String.format("尊贵的%s会员您好!您本月已到店进行了三次项目护理，第四次给您免费做该项目升一级的护理，请您安排好时间，准确来护理哦！",
                 customerName);
         return sendSms(phoneNumber, content);
     }

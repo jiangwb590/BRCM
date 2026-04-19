@@ -47,7 +47,7 @@ public class ConsumeRecordServiceImpl extends ServiceImpl<ConsumeRecordMapper, C
 
     @Override
     public Page<ConsumeRecord> pageRecords(PageRequest pageRequest, ConsumeRecord query) {
-        Page<ConsumeRecord> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<ConsumeRecord> page = pageRequest.toPage();
         
         LambdaQueryWrapper<ConsumeRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(query.getCustomerName()), ConsumeRecord::getCustomerName, query.getCustomerName());

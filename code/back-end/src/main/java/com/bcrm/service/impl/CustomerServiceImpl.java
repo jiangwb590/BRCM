@@ -29,7 +29,7 @@ public class CustomerServiceImpl extends ServiceImpl<CustomerMapper, Customer> i
 
     @Override
     public Page<Customer> pageCustomers(PageRequest pageRequest, Customer query) {
-        Page<Customer> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<Customer> page = pageRequest.toPage();
         
         LambdaQueryWrapper<Customer> wrapper = new LambdaQueryWrapper<>();
         

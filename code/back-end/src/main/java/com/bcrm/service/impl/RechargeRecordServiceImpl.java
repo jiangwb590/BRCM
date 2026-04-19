@@ -34,7 +34,7 @@ public class RechargeRecordServiceImpl extends ServiceImpl<RechargeRecordMapper,
 
     @Override
     public Page<RechargeRecord> pageRecharges(PageRequest pageRequest, Long customerId) {
-        Page<RechargeRecord> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
+        Page<RechargeRecord> page = pageRequest.toPage();
         LambdaQueryWrapper<RechargeRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(customerId != null, RechargeRecord::getCustomerId, customerId);
         wrapper.orderByDesc(RechargeRecord::getCreateTime);
